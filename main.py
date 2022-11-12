@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os
+os.chdir(r"C:\Z_Proyectos\descargas_DIAN")
+
 import config
+import pdf_tables as pt
 import pandas as pd
 from glob import glob
 import time
@@ -44,11 +47,10 @@ def quit_driver():
     
 def dian_login(params):
     driver.get(params['url'])
-    driver.maximize_window()
-    WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, r'//*[@id="user-info-wrapper"]/p')))
-    driver.get(config.url_received)
      
 def search_docs(params):
+    driver.maximize_window()
+    driver.get(config.url_received)
     field_dates = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.XPATH, r'//*[@id="dashboard-report-range"]')))
     field_dates.clear()
     field_dates.send_keys(params['dates_str'], Keys.ENTER)
@@ -62,37 +64,55 @@ def search_docs(params):
 
 def download_docs():
     
-    pre_docs = len(glob(os.path.join(config.download_path + "*.zip")))
-    new_docs = 0
     num_pages = WebDriverWait(driver, 15).until(EC.presence_of_all_elements_located((By.XPATH, r'//*[@id="tableDocuments_paginate"]/span/a')))
     
     for page in num_pages:
         page.click()
         download_buttons = WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, r'//*[@class="btn btn-xs add-tooltip download-document"]')))
         for button in download_buttons:
-            try:
-                close_btn = WebDriverWait(driver, 2).until(EC.visibility_of_element_located((By.XPATH,'//*[@id="close-menu-button"]')))
-                close_btn.click()
-            except:
-                pass
-                
-            button.click()
-            cont = 0
-            while new_docs <= pre_docs:
-                time.sleep(1)
-                new_docs = len(glob(os.path.join(config.download_path + "*.zip")))
-                cont += 1
-                if cont >= 5:
-                    break
-            pre_docs = new_docs
+            cufe = button.get_attribute('data-id')
+            print(cufe)
+            retrieve_http(cufe)
+            
+def retrieve_http(cufe):
+    driver.get(config.download_doc_url + cufe)
+    time.sleep(2)
+    
+def doc_list_from_file(doc_list_path: str = config.doc_list_path):
+    df_docs = pd.read_excel(doc_list_path)
+    cufes = df_docs['CUFE/CUDE'].unique()
+    
+    for cufe in cufes:
+        retrieve_http(cufe)
+    
 
-def dian_pipeline(param_file: str = config.param_file):
+def dian_pipeline(param_file: str = config.param_file, from_file: bool = False):
+    zips_glob = config.download_path + '*.zip'
+    not_zips = glob(zips_glob)
     params = read_parameters(param_file)
     initialize_driver()
     dian_login(params)
-    search_docs(params)
-    download_docs()
-    #quit_driver()
+    
+    if from_file:
+        doc_list_from_file()
+    else:
+        search_docs(params)
+        download_docs()
+    
+    quit_driver()
+    
+    zips = [i for i in glob(zips_glob) if i not in not_zips]
+    
+    return zips
+    
+def lector_pdf_pipeline(zips):
+    for z in zips:
+        pt.move_file(z, config.zips_paths)
+    df_total = pt.main(export=True)
+    
+    return df_total
 
 if __name__ == '__main__':
-    dian_pipeline()
+    zips = dian_pipeline(from_file=True)
+    df_total = lector_pdf_pipeline(export=True)
+    
