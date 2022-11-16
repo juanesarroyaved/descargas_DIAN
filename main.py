@@ -68,8 +68,8 @@ def retrieve_http(cufe):
     driver.get(config.download_doc_url + cufe)
     time.sleep(2)
     
-def doc_list_from_file(doc_list_path: str = config.doc_list_path):
-    df_docs = pd.read_excel(doc_list_path)
+def doc_list_from_file(xlsx_path: str = config.params['xlsx_path']):
+    df_docs = pd.read_excel(xlsx_path)
     cufes = df_docs['CUFE/CUDE'].unique()
     
     for cufe in cufes:

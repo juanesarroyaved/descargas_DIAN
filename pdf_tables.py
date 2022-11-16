@@ -41,11 +41,14 @@ def unzip_files(zip_path: str, dest_path: str):
     move_file(zip_path, dest_zip_path)
     list_files = zipfile.namelist()
     files = {}
+    files['zip_path'] = zip_path
     for f in list_files:
         if 'pdf' in f:
             files['pdf'] = f
+            files['cufe'] = os.path.splitext(f)[0]
         elif 'xml' in f:
             files['xml'] = f
+            files['cufe'] = os.path.splitext(f)[0]
     
     return files
 
@@ -112,14 +115,14 @@ def correct_pdf_eof(file_pdf, path):
                 f.writelines(new_txt)
             break
 
-def parse_xml(xml_path):
+def parse_xml(xml_path, zip_path):
     root = ET.parse(f'{xml_path}').getroot()
     pago = 0
     for r in root:
         if 'PaymentMeans' in r.tag:
             pago = int(r[0].text)
     
-    file_orig = os.path.join(dest_path, 'Archivos_zip', cufe + ".zip")
+    file_orig = zip_path
     
     status = 'Pending'
     if pago == 1:
@@ -143,8 +146,8 @@ def separate_contado_credito(df_total):
     credito = df_total[df_total['0 Forma de pago']=='Crédito']
     
     for key, df in {'Contado': contado, 'Credito': credito}.items():
-        for file in df['0 Código Único de Factura - CUFE']:
-            file_orig = os.path.join(dest_path, 'Archivos_zip', file + ".zip")
+        for file in df['Path']:
+            file_orig = os.path.join(file)
             file_dest = os.path.join(dest_path, key)
             move_file(file_orig, file_dest)
                 
@@ -179,7 +182,7 @@ def main(export: bool = False):
     
     validate_create_folders(folders)
     create_logger(dest_path)
-    
+        
     logging.info('INICIO EJECUCIÓN.')
     
     cufes_ok = []
@@ -188,20 +191,24 @@ def main(export: bool = False):
     paths_unzip = get_paths_to_unzip(zips_paths)
     for zip_path in paths_unzip:        
         files = unzip_files(zip_path, dest_path)
-        cufe = os.path.splitext(os.path.split(zip_path)[1])[0]
+        
+        if files['cufe']:
+            cufe = files['cufe']
+        else:
+            cufe = os.path.splitext(os.path.split(zip_path)[1])[0]
         cufes_all.append(cufe)
         pdf_path = os.path.join(dest_path, files['pdf'])
         doc_text = read_pdf(pdf_path)
         
         if not doc_text is None:
             df_fields = text_to_dataframe(doc_text)
-            df_fields['Path'] = pdf_path
+            df_fields['Path'] = zip_path
             df_list.append(df_fields)
             cufes_ok.append(cufe)
             logging.info(f'OK PDF: {cufe}')
         else:
             xml_path = os.path.join(dest_path, files['xml']) 
-            status = parse_xml(xml_path)
+            status = parse_xml(xml_path, files['zip_path'])
             
             if not status == 'Pending':
                 logging.info(f'OK XML: {cufe}')
