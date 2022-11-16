@@ -2,11 +2,23 @@
 
 import os
 from datetime import datetime
+import pandas as pd
 
-param_file = r"C:\Z_Proyectos\descargas_DIAN\Parametros.xlsx" ##CAMBIAR
-doc_list_path = r"C:\Z_Proyectos\descargas_DIAN\Documentos.xlsx" ##CAMBIAR
-download_path = "C:\\Users\\ASUS\\Downloads\\" ##CAMBIAR
-zips_paths = r"Y:\02. CONTABILIDAD\1 CONTADOR\2 CLAUDIA  PATRICIA GOMEZ SALAZAR\CLAUDIA FACT ELECTRONICAS 2022\RADIAN\10. 31 DE OCTUBRE DEL 2022"
+download_path = "C:\\Users\\ASUS\\Downloads\\"
+param_file = r"C:\Z_Proyectos\descargas_DIAN\Parametros.xlsx"
+
+df_param = pd.read_excel(param_file, index_col=0)
+start_date = df_param.loc['Fecha inicio','Valor'].strftime('%Y/%m/%d')
+end_date = df_param.loc['Fecha inicio','Valor'].strftime('%Y/%m/%d')
+zips_paths = df_param.loc['Ruta ZIPs','Valor']
+
+params = {}
+params['Execution'] = df_param.loc['Tipo de ejecución','Valor']
+params['From_xlsx'] = df_param.loc['Descarga desde excel','Valor']
+params['xlsx_path'] = df_param.loc['Ruta listado excel','Valor']
+params['zips_path'] = zips_paths
+params['dates_str'] = start_date + ' - ' + end_date
+params['url'] = df_param.loc['URL DIAN','Valor']
 
 url_received = r"https://catalogo-vpfe.dian.gov.co/Document/Received"
 download_doc_url = r"https://catalogo-vpfe.dian.gov.co/Document/DownloadZipFiles?trackId="

@@ -20,16 +20,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 
-def read_parameters(param_file: str = config.param_file):
-    df_param = pd.read_excel(param_file)
-    start_date = df_param['FECHA INICIO'][0].strftime('%Y/%m/%d')
-    end_date = df_param['FECHA FIN'][0].strftime('%Y/%m/%d')
-    params = {}
-    params['dates_str'] = start_date + ' - ' + end_date
-    params['url'] = df_param['URL DIAN'][0]
-    
-    return params
-
 def initialize_driver():
     global driver
     
@@ -45,10 +35,10 @@ def initialize_driver():
 def quit_driver():
     driver.quit()
     
-def dian_login(params):
+def dian_login(params: dict = config.params):
     driver.get(params['url'])
      
-def search_docs(params):
+def search_docs(params: dict = config.params):
     driver.maximize_window()
     driver.get(config.url_received)
     field_dates = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.XPATH, r'//*[@id="dashboard-report-range"]')))
@@ -86,14 +76,13 @@ def doc_list_from_file(doc_list_path: str = config.doc_list_path):
         retrieve_http(cufe)
     
 
-def dian_pipeline(param_file: str = config.param_file, from_file: bool = False):
+def dian_pipeline(params: dict = config.params):
     zips_glob = config.download_path + '*.zip'
     not_zips = glob(zips_glob)
-    params = read_parameters(param_file)
     initialize_driver()
     dian_login(params)
     
-    if from_file:
+    if params['From_xlsx'] == 'SI' and os.path.isfile(params['xlsx_path']):
         doc_list_from_file()
     else:
         search_docs(params)
@@ -105,7 +94,7 @@ def dian_pipeline(param_file: str = config.param_file, from_file: bool = False):
     
     return zips
     
-def lector_pdf_pipeline(zips):
+def lector_pdf_pipeline(zips: list, export: bool = True):
     for z in zips:
         pt.move_file(z, config.zips_paths)
     df_total = pt.main(export=True)
@@ -113,6 +102,6 @@ def lector_pdf_pipeline(zips):
     return df_total
 
 if __name__ == '__main__':
-    zips = dian_pipeline(from_file=True)
-    df_total = lector_pdf_pipeline(export=True)
+    zips = dian_pipeline()
+    df_total = lector_pdf_pipeline(zips)
     

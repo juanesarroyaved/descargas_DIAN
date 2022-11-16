@@ -12,7 +12,6 @@ TO-DO:
 """
 
 import os
-os.chdir(r'C:\Z_Proyectos\descargas_DIAN')
 
 import shutil as sh
 from config import folders, dest_path, dest_zip_path, error_path, fieldsToSearch, zips_paths, logs_path, today
@@ -213,7 +212,7 @@ def main(export: bool = False):
                 move_file(file_orig, error_path)
                 
     df_total = pd.concat(df_list).sort_index(axis=1)
-    #separate_contado_credito(df_total)
+    separate_contado_credito(df_total)
     cufes_left = validate_cufes_left(cufes_ok, cufes_all)
     
     if export:
