@@ -74,9 +74,12 @@ def doc_list_from_file(xlsx_path: str = config.params['xlsx_path']):
     
     for cufe in cufes:
         retrieve_http(cufe)
-    
 
-def dian_pipeline(params: dict = config.params):
+def move_to_zips_path(zips):
+    for z in zips:
+        pt.move_file(z, config.zips_paths)
+
+def download_pipeline(params: dict = config.params):
     zips_glob = config.download_path + '*.zip'
     not_zips = glob(zips_glob)
     initialize_driver()
@@ -91,17 +94,16 @@ def dian_pipeline(params: dict = config.params):
     quit_driver()
     
     zips = [i for i in glob(zips_glob) if i not in not_zips]
+    move_to_zips_path(zips)
     
     return zips
     
-def lector_pdf_pipeline(zips: list, export: bool = True):
-    for z in zips:
-        pt.move_file(z, config.zips_paths)
-    df_total = pt.main(export=True)
-    
-    return df_total
+def dian_main(params: dict = config.params):
+    if 'Descarga' in params['Execution']:
+        zips = download_pipeline(params)
+    if 'Clasificación' in params['Execution']:
+        df_total = pt.main()
 
 if __name__ == '__main__':
-    zips = dian_pipeline()
-    df_total = lector_pdf_pipeline(zips)
+    dian_main(params=config.params)
     

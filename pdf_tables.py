@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-
-"""
-TO-DO:
-    - Optimizar y organizar código.
-    - Una mejor forma de leer los XMLs
-    - Pasar info de XMLs a Excel
-    - Que cree una carpeta con la hora
-    - Crear un archivo de Logs para el usuario.
-    - Actualizar today y dest_path con c/ejecución para crear nueva carpeta.
-    - Independizar nombre del zip con el de la factura porque algunos nombres son diferentes.
-"""
-
 import os
 
 import shutil as sh
@@ -176,7 +164,7 @@ def create_logger(dest_path):
                         format='%(asctime)s: %(message)s', datefmt='%Y.%m.%d %H:%M %p',
                         level=logging.DEBUG)
     
-def main(export: bool = False):
+def main():
 
     global cufe
     
@@ -222,14 +210,13 @@ def main(export: bool = False):
     separate_contado_credito(df_total)
     cufes_left = validate_cufes_left(cufes_ok, cufes_all)
     
-    if export:
-        cons_path = os.path.join(logs_path, f'Consolidado_{today}.xlsx')
-        df_total.to_excel(cons_path, index=False)
+    cons_path = os.path.join(logs_path, f'Consolidado_{today}.xlsx')
+    df_total.to_excel(cons_path, index=False)
     
     logging.info('FIN EJECUCIÓN.')
     
     return df_total
 
 if __name__ == '__main__':
-    df_total = main(export=True)
+    df_total = main()
 
